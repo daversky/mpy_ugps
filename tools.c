@@ -2,9 +2,9 @@
 #include "tools.h"
 #include "py/runtime.h"
 #include "py/obj.h"
-#include <math.h>
-#include <string.h>
-#include <stdlib.h>
+//#include <math.h>
+//#include <string.h>
+//#include <stdlib.h>
 
 #define EARTH_RADIUS_M 6371000.0
 #define DEG_TO_RAD (M_PI / 180.0)
@@ -23,7 +23,7 @@ static mp_obj_t float_or_none(double value) {
     return mp_obj_new_float(value);
 }
 
-mp_obj_t create_data_dict(gps_data_t* gps_data) {
+mp_obj_t create_data_dict(gnss_data_t* gps_data) {
     mp_obj_t dict = mp_obj_new_dict(15);
     mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_valid),        mp_obj_new_bool(gps_data->is_valid));
     mp_obj_dict_store(dict, MP_OBJ_NEW_QSTR(MP_QSTR_sat_used),     mp_obj_new_int(gps_data->sat_used));
@@ -50,7 +50,7 @@ void unpack_coord(mp_obj_t coord_obj, double* lon, double* lat) {
     *lat = mp_obj_get_float(items[1]);
 }
 
-void gps_data_reset(gps_data_t* gps_data) {
+void gps_data_reset(gnss_data_t* gps_data) {
     gps_data->is_valid = 0;
     gps_data->lat = NAN;
     gps_data->lon = NAN;
@@ -133,37 +133,7 @@ double parse_coordinate(const char* coord, char direction) {
     return result;
 }
 
-//mp_obj_t parse_nmea_string(mp_obj_t string_obj) {
-//    const char* raw_string = mp_obj_str_get_str(string_obj);
-//    const char* nmea_string = strchr(raw_string, '$');
-//    int nmea_string_is_valid = 0;
-//    if (nmea_string != NULL) {
-//        if (strlen(nmea_string) >= 10 && checksum_valid(nmea_string)) {
-//            nmea_string_is_valid = 1;
-//        }
-//    }
-//    if (nmea_string_is_valid) {
-//        char msg_type[4] = {0};
-//        memcpy(msg_type, nmea_string + 3, 3);
-//        msg_type[3] = '\0';
-//        if (strcmp(msg_type, "RMC") == 0) {
-//            gps_data_reset(&current_gps_data);
-//            parse_rmc(nmea_string, &current_gps_data);
-//        } else if (strcmp(msg_type, "GGA") == 0) {
-//            parse_gga(nmea_string, &current_gps_data);
-//        } else if (strcmp(msg_type, "GSA") == 0) {
-//            parse_gsa(nmea_string, &current_gps_data);
-//        } else if (strcmp(msg_type, "GSV") == 0) {
-//            parse_gsv(nmea_string, &current_gps_data);
-//        } else if (strcmp(msg_type, "VTG") == 0) {
-//            parse_vtg(nmea_string, &current_gps_data);
-//        }
-//    }
-//}
-
-// tools.c
-
-void parse_nmea_string(mp_obj_t string_obj, gps_data_t* gps_data) {
+void parse_nmea(mp_obj_t string_obj, gnss_data_t* gps_data) {
     const char* raw_string = mp_obj_str_get_str(string_obj);
     const char* nmea_string = strchr(raw_string, '$');
     int nmea_string_is_valid = 0;
@@ -174,10 +144,9 @@ void parse_nmea_string(mp_obj_t string_obj, gps_data_t* gps_data) {
         }
     }
     if (nmea_string_is_valid) {
-        char msg_type[4] = {0}; // Исправлено: теперь это корректный массив
+        char msg_type[4] = {0};
         memcpy(msg_type, nmea_string + 3, 3);
-        msg_type[3] = '\0';     // Исправлено: корректный нуль-терминатор для массива
-        // Убрали привязку к current_gps_data. Передаем внешний gps_data
+        msg_type[3] = '\0';
         if (strcmp(msg_type, "RMC") == 0) {
             gps_data_reset(gps_data);
             parse_rmc(nmea_string, gps_data);
@@ -205,7 +174,7 @@ int checksum_valid(const char* msg) {
     return calculated_checksum == received_checksum;
 }
 
-void parse_rmc(const char* msg, gps_data_t* gps_data) {
+void parse_rmc(const char* msg, gnss_data_t* gps_data) {
     char fields[20][16] = {0};
     int field_count = parse_fields(msg, fields, 20);
     if (field_count < 12) return;
@@ -231,7 +200,7 @@ void parse_rmc(const char* msg, gps_data_t* gps_data) {
     }
 }
 
-void parse_gga(const char* msg, gps_data_t* gps_data) {
+void parse_gga(const char* msg, gnss_data_t* gps_data) {
     char fields[20][16] = {0};
     int field_count = parse_fields(msg, fields, 20);
     if (field_count < 14) return;
@@ -252,7 +221,7 @@ void parse_gga(const char* msg, gps_data_t* gps_data) {
     }
 }
 
-void parse_gsa(const char* msg, gps_data_t* gps_data) {
+void parse_gsa(const char* msg, gnss_data_t* gps_data) {
     char fields[20][16] = {0};
     int field_count = parse_fields(msg, fields, 20);
     if (field_count < 18) return;
@@ -274,7 +243,7 @@ void parse_gsa(const char* msg, gps_data_t* gps_data) {
     }
 }
 
-void parse_gsv(const char* msg, gps_data_t* gps_data) {
+void parse_gsv(const char* msg, gnss_data_t* gps_data) {
     char fields[20][16] = {0};
     int field_count = parse_fields(msg, fields, 20);
     if (field_count < 4) return;
@@ -285,7 +254,7 @@ void parse_gsv(const char* msg, gps_data_t* gps_data) {
     }
 }
 
-void parse_vtg(const char* msg, gps_data_t* gps_data) {
+void parse_vtg(const char* msg, gnss_data_t* gps_data) {
     char fields[20][16] = {0};
     int field_count = parse_fields(msg, fields, 20);
     if (field_count < 8) return;
