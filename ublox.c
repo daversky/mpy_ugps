@@ -43,7 +43,7 @@ static mp_obj_t ublox_make_new(const mp_obj_type_t *type, size_t n_args, size_t 
     mp_obj_t uart_obj = args[ARG_uart].u_obj;
     bool debug = args[ARG_debug].u_bool;
     if (debug == true) {
-        mp_printf(&mp_plat_print, "Enabled Debug\n");
+        mp_printf(&mp_plat_print, "[ugps]: enabled debug\n");
     }
     if (uart_obj == mp_const_none || uart_obj == MP_OBJ_NULL) {
         mp_raise_TypeError(MP_ERROR_TEXT("uart argument required"));
@@ -122,10 +122,10 @@ static mp_obj_t ublox_get_fix(size_t n_args, const mp_obj_t *pos_args, mp_map_t 
     const char* end_msg_type =   get_msg_type(args[ARG_end_msg].u_obj, "ZDA");
     char current_msg_type[4] = {0};
     if (self->debug == true) {
-        mp_printf(&mp_plat_print, "Get Fix\n");
-        mp_printf(&mp_plat_print, "- max epoch:                '%u'\n", (unsigned int)max_count);
-        mp_printf(&mp_plat_print, "- epoch start message type: '%s'\n", start_msg_type);
-        mp_printf(&mp_plat_print, "- epoch end message type:   '%s'\n", end_msg_type);
+        mp_printf(&mp_plat_print, "[ugps] Get Fix\n");
+        mp_printf(&mp_plat_print, "[ugps] - max epoch:                '%u'\n", (unsigned int)max_count);
+        mp_printf(&mp_plat_print, "[ugps] - epoch start message type: '%s'\n", start_msg_type);
+        mp_printf(&mp_plat_print, "[ugps] - epoch end message type:   '%s'\n", end_msg_type);
     }
     int epoch_count = 0;
     int data_is_valid = self->data.is_valid;
@@ -139,7 +139,10 @@ static mp_obj_t ublox_get_fix(size_t n_args, const mp_obj_t *pos_args, mp_map_t 
         data_is_valid = self->data.is_valid;
 
         if (read_nmea_line(readline_method, nmea_msg, sizeof(nmea_msg)) != 0) {
-            mp_printf(&mp_plat_print, ".");
+            if (self->debug == true) {
+                mp_printf(&mp_plat_print, "[ugps] .");
+            }
+            gps_data_reset(&self->data);
             mp_hal_delay_ms(10);
             continue;
         }
@@ -148,9 +151,10 @@ static mp_obj_t ublox_get_fix(size_t n_args, const mp_obj_t *pos_args, mp_map_t 
         current_msg_type[2] = nmea_msg[5];
 
         if (self->debug == true) {
-            mp_printf(&mp_plat_print, "- [%d/%d] [%d] | msg:type=%s | msg=%s\n", epoch_count, max_count, data_is_valid, current_msg_type, nmea_msg);
+            mp_printf(&mp_plat_print, "[ugps] - [%d/%d] [%d] | msg:type=%s | msg=%s\n", epoch_count, max_count, data_is_valid, current_msg_type, nmea_msg);
         }
         if (strcmp(current_msg_type, end_msg_type) == 0) {
+            //
             if (data_is_valid && epoch_count > 0) {
                 return create_data_dict(&self->data);
             }
@@ -163,7 +167,6 @@ static mp_obj_t ublox_get_fix(size_t n_args, const mp_obj_t *pos_args, mp_map_t 
         }
         parse_nmea(mp_obj_new_str(nmea_msg, strlen(nmea_msg)), &self->data);
     }
-
     return create_data_dict(&self->data);
 }
 static MP_DEFINE_CONST_FUN_OBJ_KW(ublox_get_fix_obj, 1, ublox_get_fix);

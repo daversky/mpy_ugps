@@ -148,7 +148,7 @@ void parse_nmea(mp_obj_t string_obj, gnss_data_t* gps_data) {
         memcpy(msg_type, nmea_string + 3, 3);
         msg_type[3] = '\0';
         if (strcmp(msg_type, "RMC") == 0) {
-            gps_data_reset(gps_data);
+            // gps_data_reset(gps_data);
             parse_rmc(nmea_string, gps_data);
         } else if (strcmp(msg_type, "GGA") == 0) {
             parse_gga(nmea_string, gps_data);

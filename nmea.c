@@ -34,6 +34,15 @@ static mp_obj_t nmea_parse_wrapper(size_t n_args, const mp_obj_t *pos_args, mp_m
 }
 static MP_DEFINE_CONST_FUN_OBJ_KW(nmea_parse_obj, 1, nmea_parse_wrapper);
 
+// reset()
+static mp_obj_t nmea_reset_wrapper(mp_obj_t self_in) {
+    nmea_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    gps_data_reset(&self->data);
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(nmea_reset_data_obj, nmea_reset_wrapper);
+
+
 // calc_distance(coord1, coord2)
 static mp_obj_t nmea_calc_distance_wrapper(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_coord1, ARG_coord2 };
@@ -78,6 +87,7 @@ static MP_DEFINE_CONST_FUN_OBJ_KW(nmea_calc_bearing_obj, 1, nmea_calc_bearing_wr
 
 static const mp_rom_map_elem_t nmea_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_parse),          MP_ROM_PTR(&nmea_parse_obj) },
+    { MP_ROM_QSTR(MP_QSTR_reset),          MP_ROM_PTR(&nmea_parse_obj) },
     { MP_ROM_QSTR(MP_QSTR_calc_distance),  MP_ROM_PTR(&nmea_calc_distance_obj) },
     { MP_ROM_QSTR(MP_QSTR_calc_bearing),   MP_ROM_PTR(&nmea_calc_bearing_obj) },
 };
