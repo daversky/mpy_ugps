@@ -154,7 +154,6 @@ static mp_obj_t ublox_get_fix(size_t n_args, const mp_obj_t *pos_args, mp_map_t 
             mp_printf(&mp_plat_print, "[ugps] - [%d/%d] [%d] | msg:type=%s | msg=%s\n", epoch_count, max_count, data_is_valid, current_msg_type, nmea_msg);
         }
         if (strcmp(current_msg_type, end_msg_type) == 0) {
-            //
             if (data_is_valid && epoch_count > 0) {
                 return create_data_dict(&self->data);
             }
